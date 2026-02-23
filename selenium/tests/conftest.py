@@ -11,21 +11,21 @@ BASE_URL = "http://localhost:8080"
 # Health Check (FAIL if app not ready — DO NOT SKIP)
 # ======================================================
 
-def wait_for_app(url, max_retries=30):
-    print(f"\n[HEALTH CHECK] Waiting for app at {url}")
+def wait_for_app(url, max_retries=60, timeout=3):
+    print(f"\n[HEALTH CHECK] Waiting for app at {url}/login.php")
     for attempt in range(max_retries):
         try:
-            r = requests.get(f"{url}/login.php", timeout=2)
-            if r.status_code == 200:
-                print("[HEALTH CHECK] App is ready ✓")
+            r = requests.get(f"{url}/login.php", timeout=timeout)
+            if r.status_code == 200 and "Damn, sign in!" in r.text:  # cek konten penting
+                print("[HEALTH CHECK] App is ready ✓ (page contains login form)")
                 return
-        except Exception:
+        except Exception as e:
             pass
 
         print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries}...")
         time.sleep(2)
 
-    raise RuntimeError(f"Application not reachable at {url}")
+    raise RuntimeError(f"Application not reachable at {url} after {max_retries} attempts")
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -20,17 +20,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Install Google Chrome
+    - name: Install Chrome and matching ChromeDriver
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable  # atau 'latest' atau versi spesifik misal '131'
+
+    - name: Verify Chrome & ChromeDriver versions
       run: |
-        sudo apt update
-        sudo apt install -y wget unzip
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo apt install -y ./google-chrome-stable_current_amd64.deb
+        google-chrome --version
+        chromedriver --version
 
     - name: Start Docker
+      run: docker compose up -d --build
+
+    - name: Wait for application to be healthy
       run: |
-        docker compose up -d --build
-        sleep 40
+        python -c "from conftest import wait_for_app; wait_for_app('http://localhost:8080')"
+
 
     - name: Wait for DB
       run: |
