@@ -7,16 +7,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-def is_app_available(url="http://localhost:8080", timeout=2):
-    """Check if application is running"""
-    try:
-        import urllib.request
-        urllib.request.urlopen(url, timeout=timeout)
-        return True
-    except:
-        return False
-
-
 def create_driver():
     """Create and configure Chrome WebDriver for Selenium tests"""
     options = Options()
@@ -35,12 +25,12 @@ def driver():
     Fixture untuk WebDriver
     Scope: function - setiap test case mendapat driver baru
     """
-    if not is_app_available():
-        pytest.skip("Application is not running at localhost:8080")
-    
     driver_instance = create_driver()
     yield driver_instance
-    driver_instance.quit()
+    try:
+        driver_instance.quit()
+    except:
+        pass
 
 
 @pytest.fixture(scope="session")
