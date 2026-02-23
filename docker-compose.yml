@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: badcrud
+      MYSQL_DATABASE: damncrud
     volumes:
       - ./damncrud.sql:/docker-entrypoint-initdb.d/damncrud.sql
     ports:
