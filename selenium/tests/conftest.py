@@ -1,6 +1,8 @@
 import pytest
 import os
 import subprocess
+import requests
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -10,19 +12,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 def get_chromedriver_path():
     """Get chromedriver path from system or use default"""
     try:
-        # Try to find chromedriver in PATH
         result = subprocess.run(['which', 'chromedriver'], capture_output=True, text=True)
         if result.returncode == 0:
             return result.stdout.strip()
     except:
         pass
     
-    # Fallback paths
     possible_paths = [
         '/usr/bin/chromedriver',
         '/usr/local/bin/chromedriver',
         'chromedriver',
-        None  # Let Selenium handle it
+        None
     ]
     
     for path in possible_paths:
@@ -37,6 +37,28 @@ def get_chromedriver_path():
     return None
 
 
+def check_app_availability(url, max_retries=30, timeout=1):
+    """Check if application is available with retry logic"""
+    print(f"\n[HEALTH CHECK] Checking app availability at {url}")
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(f"{url}/login.php", timeout=timeout)
+            if response.status_code == 200:
+                print(f"[HEALTH CHECK] App is available! ✓")
+                return True
+        except requests.exceptions.ConnectionError:
+            print(f"[HEALTH CHECK] Attempt {attempt + 1}/{max_retries} - Connection refused, retrying...")
+        except requests.exceptions.Timeout:
+            print(f"[HEALTH CHECK] Attempt {attempt + 1}/{max_retries} - Timeout, retrying...")
+        except Exception as e:
+            print(f"[HEALTH CHECK] Attempt {attempt + 1}/{max_retries} - Error: {e}")
+        
+        time.sleep(2)
+    
+    print(f"[HEALTH CHECK] App is NOT available after {max_retries} attempts ✗")
+    return False
+
+
 def create_driver():
     """Create and configure Chrome WebDriver for Selenium tests"""
     options = Options()
@@ -48,7 +70,6 @@ def create_driver():
     options.add_argument("--disable-plugins")
     options.add_argument("--start-maximized")
     
-    # Get chromedriver path
     chromedriver_path = get_chromedriver_path()
     
     if chromedriver_path:
@@ -60,6 +81,14 @@ def create_driver():
     driver.set_page_load_timeout(30)
     driver.implicitly_wait(10)
     return driver
+
+
+@pytest.fixture(scope="session", autouse=True)
+def check_app_ready():
+    """Session-level fixture to check if app is available before running tests"""
+    app_url = "http://web"
+    if not check_app_availability(app_url):
+        pytest.skip(f"Application not available at {app_url}")
 
 
 @pytest.fixture(scope="function")

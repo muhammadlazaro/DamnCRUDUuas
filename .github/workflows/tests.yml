@@ -24,6 +24,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y chromium-browser chromium-chromedriver
       
+      - name: Start Docker services
+        run: |
+          docker-compose up -d
+          echo "Waiting for services to be ready..."
+          sleep 10
+      
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -33,3 +39,7 @@ jobs:
         run: |
           pytest selenium/tests -v -n auto --tb=short
         continue-on-error: true
+      
+      - name: Stop Docker services
+        if: always()
+        run: docker-compose down
