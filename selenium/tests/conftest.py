@@ -67,15 +67,17 @@ def driver():
     """
     Fixture untuk WebDriver
     Scope: function - setiap test case mendapat driver baru
-    Maximize window dan set timeouts
     """
+    print("\n[FIXTURE] Creating Chrome WebDriver...")
     driver_instance = create_driver()
+    print("[FIXTURE] WebDriver created successfully")
     driver_instance.maximize_window()
     yield driver_instance
+    print("[FIXTURE] Closing WebDriver...")
     try:
         driver_instance.quit()
-    except:
-        pass
+    except Exception as e:
+        print(f"[FIXTURE] Error closing driver: {e}")
 
 
 @pytest.fixture(scope="session")
