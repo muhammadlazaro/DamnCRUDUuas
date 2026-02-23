@@ -10,7 +10,7 @@ def create_driver():
     options.add_argument("--disable-dev-shm-usage")
 
     driver = webdriver.Remote(
-        command_executor="http://selenium:4444/wd/hub",
+        command_executor="http://localhost:4444/wd/hub",
         options=options
     )
 

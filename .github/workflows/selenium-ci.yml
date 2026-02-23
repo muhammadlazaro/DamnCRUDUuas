@@ -10,6 +10,12 @@ jobs:
   e2e-test:
     runs-on: ubuntu-latest
 
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,12 +30,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Start application and selenium with Docker Compose
+    - name: Start application
       run: |
-        docker compose up -d 
-        echo "Waiting for containers to be ready..."
-        sleep 30
-        docker ps
+        docker compose up -d
+        sleep 20
 
     - name: Run Selenium Tests
       run: |
@@ -37,5 +41,4 @@ jobs:
 
     - name: Shutdown containers
       if: always()
-      run: |
-        docker compose down -v
+      run: docker compose down -v

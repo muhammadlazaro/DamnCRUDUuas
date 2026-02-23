@@ -5,7 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from driver import create_driver
 
-BASE_URL = "http://web"
+BASE_URL = BASE_URL = "http://localhost:8080"
 
 
 # =========================

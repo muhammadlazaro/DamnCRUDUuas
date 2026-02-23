@@ -3,14 +3,7 @@ version: '3'
 services:
   web:
     image: php:8.2-apache
-    container_name: damncrud_app
     ports:
       - "8080:80"
     volumes:
       - .:/var/www/html
-
-  selenium:
-    image: selenium/standalone-chrome
-    container_name: selenium
-    ports:
-      - "4444:4444"
