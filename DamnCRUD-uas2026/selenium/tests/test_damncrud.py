@@ -40,7 +40,9 @@ def login(driver):
 # FT_006 - Add Contact Valid
 # =========================
 
+@pytest.mark.ft006
 def test_FT_006_add_contact_valid(driver):
+    """Test case untuk menambah kontak dengan data valid"""
     login(driver)
 
     driver.find_element(By.LINK_TEXT, "Add New Contact").click()
@@ -67,7 +69,9 @@ def test_FT_006_add_contact_valid(driver):
 # FT_008 - Edit Contact
 # =========================
 
+@pytest.mark.ft008
 def test_FT_008_edit_contact(driver):
+    """Test case untuk mengubah data kontak"""
     login(driver)
 
     WebDriverWait(driver, 10).until(
@@ -113,7 +117,9 @@ def test_FT_008_edit_contact(driver):
 # FT_009 - Delete Contact
 # =========================
 
+@pytest.mark.ft009
 def test_FT_009_delete_contact_confirm(driver):
+    """Test case untuk menghapus kontak"""
     login(driver)
 
     WebDriverWait(driver, 10).until(
@@ -142,7 +148,9 @@ def test_FT_009_delete_contact_confirm(driver):
 # FT_016 - Search Not Found
 # =========================
 
+@pytest.mark.ft016
 def test_FT_016_search_not_found(driver):
+    """Test case untuk mencari kontak yang tidak ada"""
     login(driver)
 
     WebDriverWait(driver, 10).until(
@@ -172,7 +180,9 @@ def test_FT_016_search_not_found(driver):
 # FT_019 - Upload Invalid File
 # =========================
 
+@pytest.mark.ft019
 def test_FT_019_upload_invalid_photo(driver):
+    """Test case untuk upload file yang tidak valid"""
     login(driver)
 
     driver.get(f"{BASE_URL}/profil.php")

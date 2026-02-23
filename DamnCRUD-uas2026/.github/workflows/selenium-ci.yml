@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
   e2e-test:
@@ -17,10 +18,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
+        cache: 'pip'
 
     - name: Install Python dependencies
       run: |
-        pip install --upgrade pip
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Start application with Docker
@@ -28,15 +30,48 @@ jobs:
         docker compose up -d
         docker ps
 
-    - name: Wait for web app
+    - name: Wait for web app to be ready
       run: |
-        echo "Waiting for web..."
-        sleep 25
-        curl -I http://localhost:8080
+        echo "Waiting for web application to start..."
+        sleep 30
+        max_attempts=10
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if curl -I http://localhost:8080 2>/dev/null | grep -q "HTTP"; then
+            echo "Web app is ready!"
+            break
+          fi
+          echo "Attempt $attempt/$max_attempts - Waiting..."
+          sleep 3
+          attempt=$((attempt + 1))
+        done
 
-    - name: Run Selenium Tests (Paralel)
+    - name: Run Selenium Tests in Parallel
       run: |
-        pytest selenium/tests -v -n auto
+        mkdir -p test-results
+        pytest selenium/tests \
+          --dist loadscope \
+          -n auto \
+          --timeout=30 \
+          -v \
+          --tb=short \
+          --html=test-results/report.html \
+          --self-contained-html
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 7
+
+    - name: Publish test report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-report
+        path: test-results/report.html
 
     - name: Shutdown containers
       if: always()
