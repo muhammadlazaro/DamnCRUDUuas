@@ -1,26 +1,21 @@
+version: '3'
+
 services:
   web:
-    image: php:8.2-apache
-    container_name: damncrud_web
+    build: .
+    container_name: damncrud_app
     ports:
       - "8080:80"
-    volumes:
-      - .:/var/www/html
-    depends_on:
-      - db
-    command: >
-      bash -c "
-      docker-php-ext-install pdo pdo_mysql &&
-      apache2-foreground
-      "
+    networks:
+      - testnet
 
-  db:
-    image: mysql:8.0
-    container_name: damncrud_db
-    environment:
-      MYSQL_DATABASE: damncrud
-      MYSQL_ROOT_PASSWORD: root
+  selenium:
+    image: selenium/standalone-chrome
+    container_name: selenium
     ports:
-      - "3307:3306"
-    volumes:
-      - ./db:/docker-entrypoint-initdb.d
+      - "4444:4444"
+    networks:
+      - testnet
+
+networks:
+  testnet:

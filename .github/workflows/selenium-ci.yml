@@ -24,12 +24,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Start application with Docker
+    - name: Start application and selenium with Docker Compose
       run: |
-        docker compose up -d
-        sleep 20
+        docker compose up -d --build
+        echo "Waiting for containers to be ready..."
+        sleep 30
+        docker ps
 
-    - name: Run Selenium Tests in Parallel
+    - name: Run Selenium Tests
       run: |
         pytest -n auto -v
 
