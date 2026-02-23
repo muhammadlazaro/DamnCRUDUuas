@@ -1,10 +1,40 @@
 import pytest
 import os
+import subprocess
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
+
+
+def get_chromedriver_path():
+    """Get chromedriver path from system or use default"""
+    try:
+        # Try to find chromedriver in PATH
+        result = subprocess.run(['which', 'chromedriver'], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except:
+        pass
+    
+    # Fallback paths
+    possible_paths = [
+        '/usr/bin/chromedriver',
+        '/usr/local/bin/chromedriver',
+        'chromedriver',
+        None  # Let Selenium handle it
+    ]
+    
+    for path in possible_paths:
+        if path is None:
+            return None
+        try:
+            subprocess.run([path, '--version'], capture_output=True, check=True)
+            return path
+        except:
+            continue
+    
+    return None
 
 
 def create_driver():
@@ -14,9 +44,19 @@ def create_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--start-maximized")
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    # Get chromedriver path
+    chromedriver_path = get_chromedriver_path()
+    
+    if chromedriver_path:
+        service = Service(chromedriver_path)
+        driver = webdriver.Chrome(service=service, options=options)
+    else:
+        driver = webdriver.Chrome(options=options)
+    
     driver.set_page_load_timeout(30)
     driver.implicitly_wait(10)
     return driver
