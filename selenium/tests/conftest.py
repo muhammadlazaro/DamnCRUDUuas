@@ -8,8 +8,8 @@ from selenium.webdriver.chrome.options import Options
 BASE_URL = "http://localhost:8080"
 DB_HOST = "localhost"
 DB_PORT = 3306
-DB_USER = "root"
-DB_PASS = "root123"
+DB_USER = "damncrud_user"
+DB_PASS = "damncrud_pass"
 DB_NAME = "damncrud"
 
 
@@ -17,7 +17,7 @@ DB_NAME = "damncrud"
 # Health Check - Database First, then Application
 # ======================================================
 
-def check_database_ready(max_retries=60, timeout=3):
+def check_database_ready(max_retries=90, timeout=3):
     """
     Cek database MySQL/MariaDB sudah ready untuk koneksi.
     Gunakan mysqladmin ping atau connection test.
@@ -42,23 +42,25 @@ def check_database_ready(max_retries=60, timeout=3):
         except Exception:
             pass
 
-        # Fallback: cek via aplikasi
+        # Fallback: cek via aplikasi - STRICT check
         try:
             r = requests.get(f"{BASE_URL}/login.php", timeout=timeout)
-            # Jika halaman load tapi database error, tidak return True
-            # Hanya return True jika halaman load tanpa error database
-            if r.status_code == 200 and "Failed to connect to database" not in r.text:
+            # MUST have status 200 AND login text AND NO database error
+            if (r.status_code == 200 and 
+                "Damn, sign in!" in r.text and 
+                "Failed to connect to database" not in r.text):
                 print(f"[DB CHECK] ✓ Database is ready (via app check)! (attempt {attempt+1})")
                 return True
             elif "Failed to connect to database" in r.text:
                 print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - Database still initializing...")
             else:
-                print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - App loading...")
-        except Exception:
+                print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - App loading or health check...")
+        except Exception as e:
             print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - Connection failed...")
 
         time.sleep(2)
 
+    print("[DB CHECK] ✗ Database failed to become ready!")
     return False
 
 
@@ -79,14 +81,15 @@ def wait_for_app(url, max_retries=30, timeout=3):
                 return True
             else:
                 if "Failed to connect to database" in r.text:
-                    print(f"[APP CHECK] Attempt {attempt+1} - Database still failing...")
+                    print(f"[APP CHECK] Attempt {attempt+1} - Database still failing in app...")
                 else:
                     print(f"[APP CHECK] Attempt {attempt+1} - App loading...")
         except Exception as e:
-            print(f"[APP CHECK] Attempt {attempt+1} - Connection error")
+            print(f"[APP CHECK] Attempt {attempt+1} - Connection error: {e}")
 
         time.sleep(1)
 
+    print("[APP CHECK] ✗ App failed to load correctly!")
     return False
 
 

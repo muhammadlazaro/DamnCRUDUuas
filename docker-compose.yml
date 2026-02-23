@@ -14,8 +14,10 @@ services:
       - ./db/damncrud.sql:/docker-entrypoint-initdb.d/1-init.sql
     ports:
       - "3306:3306"
+    networks:
+      - testnet
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "damncrud_user", "-pdamncrud_pass"]
       interval: 5s
       timeout: 3s
       retries: 30
