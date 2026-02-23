@@ -1,7 +1,7 @@
 <?php
 
 function pdo_connect(){
-    $DATABASE_HOST = 'localhost';
+    $DATABASE_HOST = 'db';
     $DATABASE_USER = 'root';
     $DATABASE_PASS = 'root123';
     $DATABASE_NAME = 'badcrud';
