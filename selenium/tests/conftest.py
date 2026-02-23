@@ -13,9 +13,12 @@ def create_driver():
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
+    driver.set_page_load_timeout(30)
+    driver.implicitly_wait(10)
     return driver
 
 
@@ -24,8 +27,10 @@ def driver():
     """
     Fixture untuk WebDriver
     Scope: function - setiap test case mendapat driver baru
+    Maximize window dan set timeouts
     """
     driver_instance = create_driver()
+    driver_instance.maximize_window()
     yield driver_instance
     try:
         driver_instance.quit()
@@ -36,4 +41,4 @@ def driver():
 @pytest.fixture(scope="session")
 def base_url():
     """Base URL untuk aplikasi"""
-    return "http://localhost:8080"
+    return "http://web"

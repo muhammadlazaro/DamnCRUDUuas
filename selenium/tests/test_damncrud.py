@@ -3,21 +3,8 @@ import os
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from driver import create_driver
 
 BASE_URL = "http://web"
-
-
-# =========================
-# FIXTURE SETUP
-# =========================
-
-@pytest.fixture(scope="function")
-def driver():
-    driver = create_driver()
-    driver.maximize_window()
-    yield driver
-    driver.quit()
 
 
 def login(driver):
