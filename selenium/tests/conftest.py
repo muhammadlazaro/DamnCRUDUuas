@@ -1,57 +1,122 @@
 import pytest
 import requests
 import time
+import subprocess
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 BASE_URL = "http://localhost:8080"
+DB_HOST = "localhost"
+DB_PORT = 3306
+DB_USER = "root"
+DB_PASS = "root123"
+DB_NAME = "damncrud"
 
 
 # ======================================================
-# Health Check (FAIL if app not ready — DO NOT SKIP)
+# Health Check - Database First, then Application
 # ======================================================
 
-def wait_for_app(url, max_retries=60, timeout=3):
+def check_database_ready(max_retries=60, timeout=3):
     """
-    Tunggu hingga aplikasi siap dengan database connection.
-    Cek: HTTP 200 + login form + TIDAK ada error database
+    Cek database MySQL/MariaDB sudah ready untuk koneksi.
+    Gunakan mysqladmin ping atau connection test.
     """
-    print(f"\n[HEALTH CHECK] Waiting for app at {url}/login.php (max {max_retries} attempts, 2s interval)")
+    print(f"\n[DB CHECK] Waiting for database at {DB_HOST}:{DB_PORT}")
+    
+    for attempt in range(max_retries):
+        try:
+            # Try mysqladmin ping (jika tersedia di environment)
+            result = subprocess.run(
+                ["mysqladmin", "ping", "-h", DB_HOST, "-u", DB_USER, f"-p{DB_PASS}", "-P", str(DB_PORT)],
+                capture_output=True,
+                timeout=timeout,
+                text=True
+            )
+            if result.returncode == 0:
+                print(f"[DB CHECK] ✓ Database is ready! (attempt {attempt+1})")
+                return True
+        except FileNotFoundError:
+            # mysqladmin not available, try via app
+            pass
+        except Exception:
+            pass
+
+        # Fallback: cek via aplikasi
+        try:
+            r = requests.get(f"{BASE_URL}/login.php", timeout=timeout)
+            # Jika halaman load tapi database error, tidak return True
+            # Hanya return True jika halaman load tanpa error database
+            if r.status_code == 200 and "Failed to connect to database" not in r.text:
+                print(f"[DB CHECK] ✓ Database is ready (via app check)! (attempt {attempt+1})")
+                return True
+            elif "Failed to connect to database" in r.text:
+                print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - Database still initializing...")
+            else:
+                print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - App loading...")
+        except Exception:
+            print(f"[DB CHECK] Attempt {attempt+1}/{max_retries} - Connection failed...")
+
+        time.sleep(2)
+
+    return False
+
+
+def wait_for_app(url, max_retries=30, timeout=3):
+    """
+    Tunggu aplikasi login page load dengan benar (tanpa database error).
+    Database harus sudah ready sebelum ini.
+    """
+    print(f"\n[APP CHECK] Verifying app at {url}/login.php")
     
     for attempt in range(max_retries):
         try:
             r = requests.get(f"{url}/login.php", timeout=timeout)
-            if r.status_code == 200:
-                # Cek bahwa halaman berhasil load DAN database connected
-                if "Damn, sign in!" in r.text and "Failed to connect to database" not in r.text:
-                    elapsed = (attempt + 1) * 2
-                    print(f"[HEALTH CHECK] ✓ App is ready! (attempt {attempt+1}, elapsed {elapsed}s)")
-                    return
-                else:
-                    if "Failed to connect to database" in r.text:
-                        print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries} - Database not ready yet...")
-                    else:
-                        print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries} - App loading...")
+            if (r.status_code == 200 and 
+                "Damn, sign in!" in r.text and 
+                "Failed to connect to database" not in r.text):
+                print(f"[APP CHECK] ✓ App login page is correct! (attempt {attempt+1})")
+                return True
             else:
-                print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries} - HTTP {r.status_code}")
-                
-        except requests.exceptions.ConnectionError:
-            print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries} - Connection refused")
+                if "Failed to connect to database" in r.text:
+                    print(f"[APP CHECK] Attempt {attempt+1} - Database still failing...")
+                else:
+                    print(f"[APP CHECK] Attempt {attempt+1} - App loading...")
         except Exception as e:
-            print(f"[HEALTH CHECK] Attempt {attempt+1}/{max_retries} - Error: {type(e).__name__}")
+            print(f"[APP CHECK] Attempt {attempt+1} - Connection error")
 
-        time.sleep(2)
+        time.sleep(1)
 
-    raise RuntimeError(
-        f"Application not ready at {url} after {max_retries} attempts. "
-        f"Check: 1) Database initialized, 2) App env vars set, 3) Docker running"
-    )
+    return False
 
 
 @pytest.fixture(scope="session", autouse=True)
 def check_app_ready():
-    """Session fixture: check app readiness BEFORE any tests run"""
-    wait_for_app(BASE_URL)
+    """
+    Session fixture: Verify BOTH database AND app ready before any tests run.
+    This is mandatory - fail loudly if anything not ready.
+    """
+    print("\n" + "="*60)
+    print("STARTING PRE-TEST HEALTH CHECKS")
+    print("="*60)
+    
+    # Step 1: Wait for database
+    if not check_database_ready(max_retries=60):
+        raise RuntimeError(
+            f"❌ Database not ready at {DB_HOST}:{DB_PORT} after 120 seconds. "
+            f"Check: MySQL/MariaDB container running, port forwarded, credentials correct"
+        )
+    
+    # Step 2: Wait for app
+    if not wait_for_app(BASE_URL, max_retries=30):
+        raise RuntimeError(
+            f"❌ Application not ready at {BASE_URL} after 30 seconds. "
+            f"Check: Docker container running, database fully initialized"
+        )
+    
+    print("\n" + "="*60)
+    print("✓ ALL HEALTH CHECKS PASSED - TESTS CAN RUN")
+    print("="*60 + "\n")
 
 
 # ======================================================
