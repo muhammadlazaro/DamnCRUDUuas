@@ -2,8 +2,11 @@ version: '3'
 
 services:
   web:
-    image: php:8.2-apache
+    build: .
     ports:
       - "8080:80"
-    volumes:
-      - .:/var/www/html
+
+  selenium:
+    image: selenium/standalone-chrome
+    ports:
+      - "4444:4444"
