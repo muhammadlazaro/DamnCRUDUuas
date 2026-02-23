@@ -3,8 +3,6 @@ import requests
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-
 
 BASE_URL = "http://localhost:8080"
 
@@ -36,7 +34,7 @@ def check_app_ready():
 
 
 # ======================================================
-# WebDriver Fixture (parallel-safe)
+# WebDriver Fixture (parallel-safe + Selenium Manager)
 # ======================================================
 
 @pytest.fixture(scope="function")
@@ -45,11 +43,11 @@ def driver():
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
-    service = Service()  # use system chromedriver
-    driver = webdriver.Chrome(service=service, options=options)
+    # ❗ TIDAK pakai Service()
+    # ❗ TIDAK pakai manual chromedriver path
+    driver = webdriver.Chrome(options=options)
 
     driver.set_page_load_timeout(30)
     driver.implicitly_wait(5)
