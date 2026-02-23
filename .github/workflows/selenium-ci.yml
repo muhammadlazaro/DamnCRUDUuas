@@ -21,23 +21,19 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        cd DamnCRUD-uas2026
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Start application with Docker
       run: |
-        cd DamnCRUD-uas2026
         docker compose up -d
-        sleep 30
+        sleep 20
 
     - name: Run Selenium Tests in Parallel
       run: |
-        cd DamnCRUD-uas2026
-        pytest selenium/tests -n auto -v
+        pytest -n auto -v
 
     - name: Shutdown containers
       if: always()
       run: |
-        cd DamnCRUD-uas2026
         docker compose down -v
