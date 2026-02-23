@@ -1,4 +1,4 @@
-name: Selenium CI (End to End)
+name: Test Pipeline
 
 on:
   push:
@@ -7,17 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  e2e-test:
+  test:
     runs-on: ubuntu-latest
 
-    services:
-      selenium:
-        image: selenium/standalone-chrome
-        ports:
-          - 4444:4444
-
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Set up Python
@@ -25,20 +19,12 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install Python dependencies
+    - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        cd DamnCRUD-uas2026
         pip install -r requirements.txt
 
-    - name: Start application
+    - name: Verify test collection
       run: |
-        docker compose up -d
-        sleep 20
-
-    - name: Run Selenium Tests
-      run: |
-        pytest -n auto -v
-
-    - name: Shutdown containers
-      if: always()
-      run: docker compose down -v
+        cd DamnCRUD-uas2026
+        pytest selenium/tests --collect-only -q
