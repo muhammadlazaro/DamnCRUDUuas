@@ -32,6 +32,10 @@ jobs:
         docker compose up -d --build
         sleep 40
 
+    - name: Wait for DB
+      run: |
+        sleep 20  
+
     - name: Run Tests
       run: pytest -n auto -v
 
