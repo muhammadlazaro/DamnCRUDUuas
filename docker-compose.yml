@@ -8,10 +8,17 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: damncrud
+      MYSQL_USER: damncrud_user
+      MYSQL_PASSWORD: damncrud_pass
     volumes:
-      - ./damncrud.sql:/docker-entrypoint-initdb.d/damncrud.sql
+      - ./db/damncrud.sql:/docker-entrypoint-initdb.d/1-init.sql
     ports:
       - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   web:
     build: .
@@ -19,11 +26,21 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DB_HOST: db
+      DB_USER: damncrud_user
+      DB_PASSWORD: damncrud_pass
+      DB_NAME: damncrud
     networks:
       - testnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/login.php"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
 networks:
   testnet:
+    driver: bridge
