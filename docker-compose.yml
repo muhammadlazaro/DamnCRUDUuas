@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: badcrud
+      MYSQL_DATABASE: damncrud
     ports:
       - "3306:3306"
     volumes:
@@ -18,19 +18,10 @@ services:
   web:
     build: .
     container_name: damncrud_app
-    ports:
-      - "8080:80"
     depends_on:
       - db
-    networks:
-      - testnet
-
-  selenium:
-    image: selenium/standalone-chrome:latest
-    container_name: selenium
-    shm_size: 2gb
     ports:
-      - "4444:4444"
+      - "8080:80"
     networks:
       - testnet
 

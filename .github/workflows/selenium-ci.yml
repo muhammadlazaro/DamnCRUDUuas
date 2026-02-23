@@ -27,11 +27,37 @@ jobs:
     - name: Start containers
       run: |
         docker compose up -d --build
-        sleep 40
+
+    # 🔥 WAIT DATABASE READY
+    - name: Wait for Database
+      run: |
+        echo "Waiting for database..."
+        sleep 25
+
+    # 🔥 WAIT WEB READY
+    - name: Wait for Web App
+      run: |
+        echo "Waiting for web..."
+        for i in {1..20}; do
+          if curl -s http://localhost:8080/login.php > /dev/null; then
+            echo "Web is ready ✓"
+            break
+          fi
+          echo "Retry $i..."
+          sleep 3
+        done
+
+    - name: Show running containers
+      run: docker ps
 
     - name: Run Selenium Tests
       run: |
         pytest -n auto -v
+
+    # 🔥 Show logs if failed
+    - name: Show logs if failed
+      if: failure()
+      run: docker compose logs
 
     - name: Shutdown
       if: always()
