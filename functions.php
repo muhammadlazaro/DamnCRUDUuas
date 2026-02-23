@@ -4,9 +4,11 @@ function pdo_connect(){
     $DATABASE_HOST = 'db';
     $DATABASE_USER = 'damncrud_user';
     $DATABASE_PASS = 'damncrud_pass';
-    	return new PDO('mysql:host=' . $DATABASE_HOST . ';dbname=' . $DATABASE_NAME, $DATABASE_USER, $DATABASE_PASS);
+    $DATABASE_NAME = 'damncrud';
+    try {
+        return new PDO('mysql:host=' . $DATABASE_HOST . ';dbname=' . $DATABASE_NAME, $DATABASE_USER, $DATABASE_PASS);
     } catch (PDOException $exception) {
-    	die ('Failed to connect to database!');
+        die ('Failed to connect to database!');
     }
 }
 
