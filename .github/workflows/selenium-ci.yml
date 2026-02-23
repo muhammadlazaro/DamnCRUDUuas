@@ -9,42 +9,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Install Chrome and matching ChromeDriver
-      uses: browser-actions/setup-chrome@v1
-      with:
-        chrome-version: stable  # atau 'latest' atau versi spesifik misal '131'
+      - name: Install Chrome and matching ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
-    - name: Verify Chrome & ChromeDriver versions
-      run: |
-        google-chrome --version
-        chromedriver --version
+      - name: Show installed browser & driver versions
+        run: |
+          echo "Chrome version:"
+          google-chrome --version || echo "Chrome not found"
+          echo "ChromeDriver version:"
+          chromedriver --version || echo "ChromeDriver not found"
 
-    - name: Start Docker
-      run: docker compose up -d --build
+      - name: Start Docker containers
+        run: docker compose up -d --build
 
-    - name: Wait for application to be healthy
-      run: |
-        python -c "from conftest import wait_for_app; wait_for_app('http://localhost:8080')"
+      - name: Wait for application to be ready
+        run: |
+          echo "Waiting for the app to be healthy (max ~2 minutes)..."
+          
+          for i in {1..60}; do
+            echo "Attempt $i/60..."
+            if curl -s -f -o /dev/null http://localhost:8080/login.php; then
+              echo "→ HTTP 200 OK detected"
+              
+              # Cek apakah halaman login benar-benar muncul (bukan error page)
+              if curl -s http://localhost:8080/login.php | grep -q "Damn, sign in!"; then
+                echo "→ Login page content looks correct"
+                echo "Application is ready ✓"
+                exit 0
+              else
+                echo "→ HTTP OK tapi konten login tidak ditemukan"
+              fi
+            else
+              echo "→ Belum bisa diakses (mungkin masih starting)"
+            fi
+            
+            sleep 2
+          done
+          
+          echo "ERROR: Application failed to become healthy after 120 seconds"
+          echo "Last response from /login.php:"
+          curl -s http://localhost:8080/login.php || echo "(curl gagal)"
+          exit 1
 
+      - name: Run Selenium tests
+        run: pytest -n auto -v
 
-    - name: Wait for DB
-      run: |
-        sleep 20  
-
-    - name: Run Tests
-      run: pytest -n auto -v
-
-    - name: Stop Docker
-      if: always()
-      run: docker compose down -v
+      - name: Stop and clean up Docker
+        if: always()
+        run: docker compose down -v
