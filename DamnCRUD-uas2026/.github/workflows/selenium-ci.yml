@@ -48,15 +48,9 @@ jobs:
 
     - name: Run Selenium Tests in Parallel
       run: |
+        cd DamnCRUD-uas2026
         mkdir -p test-results
-        pytest selenium/tests \
-          --dist loadscope \
-          -n auto \
-          --timeout=30 \
-          -v \
-          --tb=short \
-          --html=test-results/report.html \
-          --self-contained-html
+        pytest selenium/tests -n auto -v --timeout=30 --html=test-results/report.html --self-contained-html
 
     - name: Upload test results
       if: always()
